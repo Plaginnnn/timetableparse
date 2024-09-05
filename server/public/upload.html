@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загрузка расписания</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .upload-container {
+            background-color: #34495e;
+            border: 2px dashed #7f8c8d;
+            border-radius: 10px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-sizing: border-box;
+            position: relative;
+            transition: border-color 0.3s;
+        }
+        .upload-container.dragover {
+            border-color: #3498db;
+        }
+        .upload-icon {
+            font-size: 50px;
+            color: #3498db;
+            margin-bottom: 20px;
+        }
+        .upload-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .upload-text span {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .file-name {
+            display: none;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .upload-label {
+            display: inline-block;
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .upload-label:hover {
+            background-color: #2980b9;
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .buttons button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .upload-button {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .upload-button:hover {
+            background-color: #27ae60;
+        }
+        .cancel-button {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .cancel-button:hover {
+            background-color: #c0392b;
+        }
+    </style>
+<body>
+    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+        <div class="upload-container" id="uploadContainer">
+            <div class="upload-icon">⬆️</div>
+            <div class="upload-text">
+                <span id="dropText">Перетащите файл сюда для загрузки</span>
+                <span>или</span>
+            </div>
+            <label for="timetable" class="upload-label">Выбрать файл</label>
+            <input type="file" id="timetable" name="timetable" accept=".json" required>
+            <div id="fileName" class="file-name"></div>
+            <div class="buttons" id="buttons">
+                <button type="submit" class="upload-button">Загрузить</button>
+                <button type="button" class="cancel-button" id="cancelButton">Отмена</button>
+            </div>
+        </div>
+    </form>
+    <script>
+       const uploadContainer = document.getElementById('uploadContainer');
+const fileInput = document.getElementById('timetable');
+const dropText = document.getElementById('dropText');
+const fileName = document.getElementById('fileName');
+const buttons = document.getElementById('buttons');
+const cancelButton = document.getElementById('cancelButton');
+const uploadForm = document.getElementById('uploadForm');
+
+// Сохраняем исходный обработчик события 'submit' формы
+const originalSubmitHandler = uploadForm.onsubmit;
+
+// Добавляем новый обработчик события 'submit' формы
+uploadForm.addEventListener('submit', async (event) => {
+    event.preventDefault(); // Предотвращаем стандартное поведение формы
+
+    const formData = new FormData(uploadForm);
+
+    try {
+        const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (response.ok) {
+            // Файл успешно загружен
+            alert('Файл успешно загружен!');
+            // Очистите поле ввода файла
+            fileInput.value = '';
+            updateFileName('');
+        } else {
+            // Произошла ошибка при загрузке файла
+            alert('Произошла ошибка при загрузке файла. Пожалуйста, попробуйте еще раз.');
+        }
+    } catch (error) {
+        console.error('Ошибка при загрузке файла:', error);
+        alert('Произошла ошибка при загрузке файла. Пожалуйста, попробуйте еще раз.');
+    }
+});
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadContainer.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+uploadContainer.addEventListener('dragover', () => {
+    uploadContainer.classList.add('dragover');
+});
+
+uploadContainer.addEventListener('dragleave', () => {
+    uploadContainer.classList.remove('dragover');
+});
+
+uploadContainer.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+
+    if (files.length) {
+        fileInput.files = files;
+        updateFileName(files[0].name);
+    }
+});
+
+fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+        updateFileName(fileInput.files[0].name);
+    }
+});
+
+function updateFileName(name) {
+    dropText.style.display = 'none';
+    fileName.textContent = `Выбран файл: ${name}`;
+    fileName.style.display = 'block';
+    buttons.style.display = 'flex';
+}
+
+cancelButton.addEventListener('click', () => {
+    fileInput.value = '';
+    dropText.style.display = 'block';
+    fileName.style.display = 'none';
+    buttons.style.display = 'none';
+});
+    </script>
+</body>
+</html>
