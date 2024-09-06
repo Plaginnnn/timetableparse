@@ -175,3 +175,59 @@ async function saveDataToDatabase(data) {
     client.release();
   }
 }
+
+
+export function formatSchedule(rows) {
+  const schedule = {};
+
+  rows.forEach(row => {
+    const date = row.date;
+    if (!schedule[date]) {
+      schedule[date] = [];
+    }
+
+    schedule[date].push({
+      week: row.week_number,
+      start_time: row.time_start.slice(0, 5),  // Format as "HH:MM"
+      end_time: row.time_end.slice(0, 5),      // Format as "HH:MM"
+      type: row.lesson_type,
+      subject: row.subject,
+      teacher: `${row.teacher_post} ${row.teacher_name}`.trim(),
+      auditory: row.auditory_name
+    });
+  });
+
+  
+
+  return schedule;
+}
+export function formatTeacherSchedule(rows) {
+  if (rows.length === 0) {
+    return { teacher: "", schedule: {} };
+  }
+
+  const teacherName = `${rows[0].teacher_post} ${rows[0].teacher_name}`.trim();
+  const schedule = {};
+
+  rows.forEach(row => {
+    const date = row.date;
+    if (!schedule[date]) {
+      schedule[date] = [];
+    }
+
+    schedule[date].push({
+      week: row.week_number,
+      start_time: row.time_start.slice(0, 5),  
+      end_time: row.time_end.slice(0, 5),      
+      type: row.lesson_type,
+      subject: row.subject,
+      group: row.group_name,
+      auditory: row.auditory_name
+    });
+  });
+
+  return {
+    teacher: teacherName,
+    schedule: schedule
+  };
+}
