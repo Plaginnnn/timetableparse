@@ -176,7 +176,6 @@ async function saveDataToDatabase(data) {
   }
 }
 
-
 export function formatSchedule(rows) {
   const schedule = {};
 
@@ -197,9 +196,21 @@ export function formatSchedule(rows) {
     });
   });
 
-  
+  // Сортировка по дате с преобразованием в ISO формат для корректного сравнения
+  const sortedDates = Object.keys(schedule).sort((a, b) => {
+    const [dayA, monthA, yearA] = a.split('-');
+    const [dayB, monthB, yearB] = b.split('-');
+    const dateA = new Date(`${yearA}-${monthA}-${dayA}`);
+    const dateB = new Date(`${yearB}-${monthB}-${dayB}`);
+    return dateA - dateB;
+  });
 
-  return schedule;
+  const sortedSchedule = {};
+  sortedDates.forEach(date => {
+    sortedSchedule[date] = schedule[date];
+  });
+
+  return sortedSchedule;
 }
 export function formatTeacherSchedule(rows) {
   if (rows.length === 0) {
@@ -226,8 +237,21 @@ export function formatTeacherSchedule(rows) {
     });
   });
 
+  const sortedDates = Object.keys(schedule).sort((a, b) => {
+    const [dayA, monthA, yearA] = a.split('-');
+    const [dayB, monthB, yearB] = b.split('-');
+    const dateA = new Date(`${yearA}-${monthA}-${dayA}`);
+    const dateB = new Date(`${yearB}-${monthB}-${dayB}`);
+    return dateA - dateB;
+  });
+
+  const sortedSchedule = {};
+  sortedDates.forEach(date => {
+    sortedSchedule[date] = schedule[date];
+  });
+
   return {
     teacher: teacherName,
-    schedule: schedule
+    schedule: sortedSchedule
   };
 }
