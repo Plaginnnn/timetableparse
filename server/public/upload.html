@@ -95,6 +95,35 @@
         .cancel-button:hover {
             background-color: #c0392b;
         }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .upload-status {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            transition: opacity 0.3s ease;
+        }
+        .buttons.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
     </style>
 <body>
     <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
@@ -107,51 +136,59 @@
             <label for="timetable" class="upload-label">Выбрать файл</label>
             <input type="file" id="timetable" name="timetable" accept=".json" required>
             <div id="fileName" class="file-name"></div>
+            <div class="spinner" id="spinner"></div>
+            <div class="upload-status" id="uploadStatus"></div>
             <div class="buttons" id="buttons">
-                <button type="submit" class="upload-button">Загрузить</button>
+                <button type="submit" class="upload-button" id="uploadButton">Загрузить</button>
                 <button type="button" class="cancel-button" id="cancelButton">Отмена</button>
             </div>
         </div>
     </form>
     <script>
-       const uploadContainer = document.getElementById('uploadContainer');
-const fileInput = document.getElementById('timetable');
-const dropText = document.getElementById('dropText');
-const fileName = document.getElementById('fileName');
-const buttons = document.getElementById('buttons');
-const cancelButton = document.getElementById('cancelButton');
-const uploadForm = document.getElementById('uploadForm');
+        const uploadContainer = document.getElementById('uploadContainer');
+        const fileInput = document.getElementById('timetable');
+        const dropText = document.getElementById('dropText');
+        const fileName = document.getElementById('fileName');
+        const buttons = document.getElementById('buttons');
+        const cancelButton = document.getElementById('cancelButton');
+        const uploadForm = document.getElementById('uploadForm');
+        const spinner = document.getElementById('spinner');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const uploadButton = document.getElementById('uploadButton');
 
-// Сохраняем исходный обработчик события 'submit' формы
-const originalSubmitHandler = uploadForm.onsubmit;
-
-// Добавляем новый обработчик события 'submit' формы
-uploadForm.addEventListener('submit', async (event) => {
-    event.preventDefault(); // Предотвращаем стандартное поведение формы
-
-    const formData = new FormData(uploadForm);
-
-    try {
-        const response = await fetch('/upload', {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (response.ok) {
-            // Файл успешно загружен
-            alert('Файл успешно загружен!');
-            // Очистите поле ввода файла
-            fileInput.value = '';
-            updateFileName('');
-        } else {
-            // Произошла ошибка при загрузке файла
-            alert('Произошла ошибка при загрузке файла. Пожалуйста, попробуйте еще раз.');
+        function setUploadingState(isUploading) {
+            spinner.style.display = isUploading ? 'block' : 'none';
+            buttons.classList.toggle('hidden', isUploading);
+            uploadStatus.textContent = isUploading ? 'Загрузка...' : '';
         }
-    } catch (error) {
-        console.error('Ошибка при загрузке файла:', error);
-        alert('Произошла ошибка при загрузке файла. Пожалуйста, попробуйте еще раз.');
-    }
-});
+
+        uploadForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            setUploadingState(true);
+
+            const formData = new FormData(uploadForm);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    alert('Файл успешно загружен!');
+                    fileInput.value = '';
+                    updateFileName('');
+                } else {
+                    alert('Произошла ошибка при загрузке файла. Пожалуйста, попробуйте еще раз.');
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке файла:', error);
+                alert('Произошла ошибка при загрузке файла. Пожалуйста, попробуйте еще раз.');
+            } finally {
+                setUploadingState(false);
+            }
+        });
 
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
     uploadContainer.addEventListener(eventName, preventDefaults, false);
@@ -187,18 +224,18 @@ fileInput.addEventListener('change', () => {
 });
 
 function updateFileName(name) {
-    dropText.style.display = 'none';
-    fileName.textContent = `Выбран файл: ${name}`;
-    fileName.style.display = 'block';
-    buttons.style.display = 'flex';
-}
+            dropText.style.display = 'none';
+            fileName.textContent = name ? `Выбран файл: ${name}` : '';
+            fileName.style.display = name ? 'block' : 'none';
+            buttons.style.display = name ? 'flex' : 'none';
+            uploadStatus.textContent = '';
+        }
 
-cancelButton.addEventListener('click', () => {
-    fileInput.value = '';
-    dropText.style.display = 'block';
-    fileName.style.display = 'none';
-    buttons.style.display = 'none';
-});
+        cancelButton.addEventListener('click', () => {
+            fileInput.value = '';
+            updateFileName('');
+            dropText.style.display = 'block';
+        });
     </script>
 </body>
 </html>
