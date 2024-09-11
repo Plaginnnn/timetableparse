@@ -15,7 +15,7 @@ const pool = new Pool({
   host: 'localhost',
   database: 'timetabledata',
   password: 'rasim2003',
-  port: 5432,
+  port: 5434,
 });
 
 export { pool };  // Экспортируем pool

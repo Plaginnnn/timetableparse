@@ -1,5 +1,4 @@
 DROP TABLE IF EXISTS timetable;
-
 CREATE TABLE timetable (
     id SERIAL PRIMARY KEY,
     week_number INTEGER NOT NULL,
@@ -18,7 +17,6 @@ CREATE TABLE timetable (
     teacher_name VARCHAR(200),
     auditory_name VARCHAR(200)
 );
-
 -- Создаем индексы для оптимизации поиска
 CREATE INDEX idx_group_name ON timetable(group_name);
 CREATE INDEX idx_week_number ON timetable(week_number);
