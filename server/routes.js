@@ -26,10 +26,14 @@ router.post('/login', (req, res) => {
   }
 });
 
+const isDecode = false
+// Обработка загрузки JSON файла
+
 // Обработка загрузки JSON файла
 router.post('/upload', upload.single('timetable'), async (req, res) => {
-  await loadTimetableData(req, res);
+  await loadTimetableData(req, res, isDecode);
 });
+
 
 
 

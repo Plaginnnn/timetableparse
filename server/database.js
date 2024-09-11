@@ -20,7 +20,7 @@ const pool = new Pool({
 
 export { pool };  // Экспортируем pool
 
-export async function loadTimetableData(req, res) {
+export async function loadTimetableData(req, res, isDecode) {
   if (!req.file) {
     return res.status(400).send('Файл не был загружен. Попробуйте еще раз.');
   }
@@ -29,15 +29,32 @@ export async function loadTimetableData(req, res) {
     // Чтение загруженного файла
     const data = await fs.readFile(req.file.path);
 
-    // Декодирование данных из Windows-1251 в UTF-8
-    const decodedData = iconv.decode(data, 'win1251');
+    let decodedData;
+
+    if (isDecode) {
+      // Декодирование данных из Windows-1251 в UTF-8
+      decodedData = iconv.decode(data, 'win1251');
+      // Замена обратных слешей на прямые
+      decodedData = decodedData.replace(/\\/g, '/');
+    } else {
+      // Если не нужно декодировать, просто преобразуем в UTF-8
+      decodedData = data.toString('utf8');
+    }
 
     // Запись данных в файл в кодировке UTF-8
     const outputPath = path.join(__dirname, 'logs', `timetable_${Date.now()}.json`);
     await fs.writeFile(outputPath, decodedData, 'utf8');
 
+    // Попытка разобрать JSON
+    let jsonData;
+    try {
+      jsonData = JSON.parse(decodedData);
+    } catch (jsonError) {
+      console.error('Ошибка при разборе JSON:', jsonError);
+      return res.status(400).send('Ошибка в структуре JSON файла. Проверьте файл и попробуйте снова.');
+    }
+
     // Загрузка данных в базу
-    const jsonData = JSON.parse(decodedData);
     await saveDataToDatabase(jsonData);
 
     // Отправляем только статус 200 (успешно)
@@ -47,7 +64,9 @@ export async function loadTimetableData(req, res) {
     res.status(500).send('Произошла ошибка при обработке файла. Попробуйте еще раз.');
   }
 }
-async function saveDataToDatabase(data) {
+
+
+export async function saveDataToDatabase(data) {
   const client = await pool.connect();
 
   try {
