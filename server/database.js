@@ -108,7 +108,7 @@ export async function saveDataToDatabase(data) {
                   lessonData.time_start,
                   lessonData.time_end
                 ]);
-
+                
                 if (existingRecord.rows.length === 0) {
                   // Если записи нет, добавляем новую
                   await client.query(`
